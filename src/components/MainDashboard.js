@@ -4,49 +4,39 @@ import { signOut } from 'firebase/auth';
 import { auth } from '../auth/firebaseConfig';
 import Header from './header';
 import ResultDisplay from './ResultDisplay';
-import Loader from "./Loader"; // Import the Loader component
+import Loader from "./Loader";
 
 // Icons for Mobile and Desktop
-import { FaMobileAlt, FaDesktop } from 'react-icons/fa';
+import { FaMobileAlt, FaDesktop, FaRocket } from 'react-icons/fa';
+
+import './MainDashboard.css'; // Import shared CSS styles
 
 function MainDashboard({ user, setUser }) {
   const [url, setUrl] = useState('');
   const [deviceType, setDeviceType] = useState('mobile'); // Default device type is mobile
   const [scores, setScores] = useState(null);
-  const [loading, setLoading] = useState(false); // State to track loading
+  const [loading, setLoading] = useState(false);
 
-  // Function to fetch performance score for a specific device type
   const fetchPerformanceData = async (device) => {
-    setLoading(true); // Set loading to true before starting the request
-
+    setLoading(true);
     try {
       const response = await axios.get('https://www.googleapis.com/pagespeedonline/v5/runPagespeed', {
         params: {
           url,
-          strategy: device, // 'mobile' or 'desktop'
-          key: 'AIzaSyB0ummJkbxS-zDAKVgaq78Rv5iP_haPGTo', // Replace with your actual API key
+          strategy: device,
         },
       });
 
-      // Extracting scores from the API response
       const data = response.data.lighthouseResult.categories;
       const performance = data.performance ? data.performance.score * 100 : 0;
-   console.log("perk",performance)
-      // Store the scores in state
+
       setScores({ performance });
     } catch (error) {
       console.error('Error fetching performance score', error);
     } finally {
-      setLoading(false); // Set loading to false after the request completes
+      setLoading(false);
     }
   };
-
-  // Effect to fetch mobile performance data by default on load
-  // useEffect(() => {
-  //   if (url) {
-  //     fetchPerformanceData(deviceType); // Fetch performance for the default device type (mobile)
-  //   }
-  // }, [url, deviceType]);
 
   const handleLogout = () => {
     signOut(auth)
@@ -55,34 +45,46 @@ function MainDashboard({ user, setUser }) {
   };
 
   return (
-    <div>
+    <div className="main-dashboard">
       <Header user={user} handleLogout={handleLogout} />
       <div className="dashboard">
-        <h2>Website Performance Checker</h2>
-        <input
-          type="text"
-          placeholder="Enter website URL"
-          value={url}
-          onChange={(e) => setUrl(e.target.value)}
-        />
+        <h2>
+          <FaRocket /> Website Performance Checker
+        </h2>
+        <div className="input-section">
+          <input
+            type="text"
+            placeholder="Enter website URL"
+            value={url}
+            onChange={(e) => setUrl(e.target.value)}
+          />
+        </div>
 
         <div className="button-group">
-          {/* Mobile Button */}
-          <button onClick={() => { setDeviceType('mobile'); fetchPerformanceData('mobile'); }}>
+          <button
+            className={`device-button ${deviceType === 'mobile' ? 'active' : ''}`}
+            onClick={() => {
+              setDeviceType('mobile');
+              fetchPerformanceData('mobile');
+            }}
+          >
             <FaMobileAlt /> Check Mobile
           </button>
 
-          {/* Desktop Button */}
-          <button onClick={() => { setDeviceType('desktop'); fetchPerformanceData('desktop'); }}>
+          <button
+            className={`device-button ${deviceType === 'desktop' ? 'active' : ''}`}
+            onClick={() => {
+              setDeviceType('desktop');
+              fetchPerformanceData('desktop');
+            }}
+          >
             <FaDesktop /> Check Desktop
           </button>
         </div>
 
-        {/* Show loader when data is being fetched */}
         {loading ? (
-          <Loader /> // Show the loader while fetching data
+          <Loader />
         ) : (
-          // Display results based on the selected device (mobile or desktop)
           scores && <ResultDisplay scores={scores} device={deviceType} />
         )}
       </div>
